@@ -1,8 +1,8 @@
 /*
 This is an anyD Darwin eom function with (fixed step) rk4 solver, for N particles.
 
-Here, the C++ stl "valarray" is used to store the particle data. This container
-has a few advantages. First, like a "vector", it deals with the dynamic memory allocation automatically, so
+Here, the C++ "valarray" is used to store the particle data. This container
+has a few advantages. First, like an stl "vector", it deals with the dynamic memory allocation automatically, so
 we don't have to worry about memory leaks. Second, valarrays are defined with several operator overloads that
 are particularly useful (e.g. vector-scalar multiplication, and vector addition).
 
@@ -58,9 +58,8 @@ int main()
 void inline rk4(valarray<double> &r, double h, double &t, const int dim)
 
 {
-    //define k, r_new, and temp. arrays to hold eom evaluations
+    //define k and r_new arrays to hold eom evaluations
     valarray<double> k(r.size());
-    valarray<double> temp(r.size());
     valarray<double> r_new(r.size());
 
     double half_h = h / 2.;
@@ -68,20 +67,20 @@ void inline rk4(valarray<double> &r, double h, double &t, const int dim)
     //1st rk4 step
     func(r, k, dim);
     r_new = h * (1. / 6.) * k;
-    temp = r + half_h * k;
+    k = r + half_h * k;
 
     //2nd
-    func(temp, k, dim);
+    func(k, k, dim);
     r_new += h * (1. / 3.) * k;
-    temp = r + half_h * k;
+    k = r + half_h * k;
 
     //3rd
-    func(temp, k, dim);
+    func(k, k, dim);
     r_new += h * (1. / 3.) * k;
-    temp = r + h * k;
+    k = r + h * k;
 
     //4th
-    func(temp, k, dim);
+    func(k, k, dim);
 
     //advance r in time
     r = r_new + h * (1. / 6.) * k;
@@ -95,11 +94,11 @@ void inline func(valarray<double> &r, valarray<double> &k, const int dim)
 
 {
     //constants
-    const double m = 1;
-    const double c = 1;
-    const double e = -1;
-    const double fac = 1. / (2.*m * m * m * c * c);
-    const double fac1 = 1. / (2.*m * m * c * c);
+    const double m = 1.0;
+    const double c = 1.0;
+    const double e = -1.0;
+    const double fac = 1. / (2.* m * m * m * c * c);
+    const double fac1 = 1. / (2.* m * m * c * c);
 
 
     //reset k vector
@@ -117,7 +116,8 @@ void inline func(valarray<double> &r, valarray<double> &k, const int dim)
     //arrays arrive in 1D form, where an element is identified by: i_par * dim + j_dim
 
     for (int i = 0; i < N_p; i++)
-    {
+    
+	{
 
         //calculate p_i^2
         double p_sq = 0.0;
@@ -137,7 +137,8 @@ void inline func(valarray<double> &r, valarray<double> &k, const int dim)
 
         //sum part of eom evaluation. Note: this probably needs a more efficient implementation
         for (int j = 0; j < N_p; j++)
-        {
+       
+		{
             double R_ij = 0.0;
 
             double pjdotn = 0.0;
@@ -147,7 +148,8 @@ void inline func(valarray<double> &r, valarray<double> &k, const int dim)
 
             //don't count ith particle
             if (i != j)
-            {
+           
+			{
                 //calculate R_ij
                 for (int d = 0; d < dim; d++)
 
@@ -177,7 +179,7 @@ void inline func(valarray<double> &r, valarray<double> &k, const int dim)
 
                 {
                     //rest of dH/dp
-                    k[i * dim + d] -= (fac / R_ij) * (r[(j + 1) * dim + d] + pjdotn * n_ij[d]);
+                    k[i * dim + d] -= (e * e / R_ij) * fac1 * (r[(j + 1) * dim + d] + pjdotn * n_ij[d]);
 
                     //-dH/dx
                     double A = (e * e) / (R_ij * R_ij);
