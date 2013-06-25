@@ -25,29 +25,84 @@ optimization.
 */
 
 #include <iostream>
+#include <fstream>
 //valarrays require:
 #include <valarray>
-
 
 using namespace std;
 
 /*
 rk4 function prototype, where "r" is a valarray containing the x, y, ... and px, py, ... for each particle.
 Use row-major ordering. "h" is the time step size, "t" is the current time, and "dim" is the number of
-spatial dimensions.
+spatial dimensions. The final argument is the function which contains the eom. Note the number of arguments and their types.
 */
-void inline rk4(valarray<double> &r, double h, double &t, const int dim);
+void inline rk4(valarray<double> &r, double h, double &t, const int dim, void (*f)(valarray<double> &, valarray<double> &, const int));
 /*
-EOM prototype. "k" is a valarray which contains the derivatives used in each step of rk4.
+Darwin EOM prototype. "k" is a valarray which contains the derivatives used in each step of rk4.
 */
 void inline func(valarray<double> &r, valarray<double> &k, const int dim);
+/*
+1D Harmonic oscillator EOM prototype. 
+*/
+void inline f_harmonic(valarray<double> &r, valarray<double> &k, const int dim);
 
 
 int main()
 
 {
-    //I.C.s, loops, etc.
+    //I.C.s, loops, etc. Here's a sample using the 1D harmonic oscillator function, f_harmonic.
+    
+/*
+    //create output file
+    ofstream OUTPUT("output.txt");
 
+        //# of particles
+    	const int N_p = 1;
+
+        //# of space dims
+    	const int dim = 1;
+
+        //total valarray size
+    	const int N_tot = 2*N_p*dim;
+
+        //declare valarray r, to contain the p's and x's
+    	valarray<double> r(N_tot);
+
+        //I.C.s
+    	r[0*dim+0] = 0.25;
+    	r[(0+1)*dim+0] = 0.5;
+
+    	//time steps, total time, etc.
+    	double sim_time = 100.0;
+    	double dt = 0.001;
+    	const int N_t = int(sim_time/dt);
+
+        //start time
+    	double t = 0.0;
+
+        //loop until endtime, outputing data at each time step
+
+    	for (int i = 0; i < N_t; i++)
+
+    	{
+    		for (int d = 0; d < dim; d++)
+
+    	{
+    		for (int i = 0; i < N_p; i++)
+
+    		{
+    		  OUTPUT << r[i*dim+d] << " " << r[(i+1)*dim+d] << endl;
+    		}
+    	}
+
+    		rk4(r, dt, t, dim, f_harmonic);
+
+
+    	}
+
+    	//close file
+    	OUTPUT.close();
+*/   
 
     return 0;
 
@@ -55,35 +110,36 @@ int main()
 
 
 
-void inline rk4(valarray<double> &r, double h, double &t, const int dim)
+void inline rk4(valarray<double> &r, double h, double &t, const int dim, void (*f)(valarray<double> &, valarray<double> &, const int))
 
 {
-    //define k and r_new arrays to hold eom evaluations
+    //define k and r_step arrays to hold eom evaluations
     valarray<double> k(r.size());
-    valarray<double> r_new(r.size());
+    valarray<double> r_step(r.size());
 
-    double half_h = h / 2.;
+    const double half_h = h / 2.;
 
     //1st rk4 step
-    func(r, k, dim);
-    r_new = h * (1. / 6.) * k;
+    f(r, k, dim);
+    r_step = h * (1. / 6.) * k;
     k = r + half_h * k;
 
     //2nd
-    func(k, k, dim);
-    r_new += h * (1. / 3.) * k;
+    f(k, k, dim);
+    r_step += h * (1. / 3.) * k;
     k = r + half_h * k;
 
     //3rd
-    func(k, k, dim);
-    r_new += h * (1. / 3.) * k;
+    f(k, k, dim);
+    r_step += h * (1. / 3.) * k;
     k = r + h * k;
 
     //4th
-    func(k, k, dim);
+    f(k, k, dim);
 
     //advance r in time
-    r = r_new + h * (1. / 6.) * k;
+    r += r_step + h * (1. / 6.) * k;
+
 
     //advance time
     t += h;
@@ -111,13 +167,13 @@ void inline func(valarray<double> &r, valarray<double> &k, const int dim)
     double *n_ij = new double[dim];
 
     //get number of particles
-    const int N_p = r.size() / dim;
+    const int N_p = r.size() / (2 * dim);
 
     //arrays arrive in 1D form, where an element is identified by: i_par * dim + j_dim
 
     for (int i = 0; i < N_p; i++)
-    
-	{
+
+    {
 
         //calculate p_i^2
         double p_sq = 0.0;
@@ -137,8 +193,8 @@ void inline func(valarray<double> &r, valarray<double> &k, const int dim)
 
         //sum part of eom evaluation. Note: this probably needs a more efficient implementation
         for (int j = 0; j < N_p; j++)
-       
-		{
+
+        {
             double R_ij = 0.0;
 
             double pjdotn = 0.0;
@@ -148,8 +204,8 @@ void inline func(valarray<double> &r, valarray<double> &k, const int dim)
 
             //don't count ith particle
             if (i != j)
-           
-			{
+
+            {
                 //calculate R_ij
                 for (int d = 0; d < dim; d++)
 
@@ -196,5 +252,38 @@ void inline func(valarray<double> &r, valarray<double> &k, const int dim)
 
     //free n_ij
     delete [] n_ij;
+
+}
+
+
+void inline f_harmonic(valarray<double> &r, valarray<double> &k, const int dim)
+
+{
+    //constants
+    const double m = 1.0;
+    const double omega = 1.0;
+
+    //get number of particles
+    const int N_p = r.size() / (2 * dim);
+
+
+    //reset k vector
+    for (unsigned int i = 0; i < k.size(); i++)
+    {
+        k[i] = 0.0;
+    }
+
+
+    for (int d = 0; d < dim; d++)
+    {
+
+        for (int i = 0; i < N_p; i++)
+
+        {
+            k[(i + 1)*dim + d] = (-1.) * m * omega * omega * r[i * dim + d];
+            k[i * dim + d] = r[(i + 1) * dim + d] / m;
+        }
+
+    }
 
 }
