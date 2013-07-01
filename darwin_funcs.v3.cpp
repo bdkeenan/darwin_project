@@ -73,8 +73,8 @@ int main()
     	r[(0+1)*dim+0] = 0.5;
 
     	//time steps, total time, etc.
-    	double sim_time = 100.0;
-    	double dt = 0.001;
+	double sim_time = 100.0;
+	double dt = 0.001;
     	const int N_t = int(sim_time/dt);
 
         //start time
@@ -113,29 +113,30 @@ int main()
 void inline rk4(valarray<double> &r, double h, double &t, const int dim, void (*f)(valarray<double> &, valarray<double> &, const int))
 
 {
-    //define k and r_step arrays to hold eom evaluations
+    //define k, r_step, and temp arrays to hold eom evaluations
     valarray<double> k(r.size());
     valarray<double> r_step(r.size());
+	valarray<double> temp(r.size());
 
     const double half_h = h / 2.;
 
     //1st rk4 step
     f(r, k, dim);
     r_step = h * (1. / 6.) * k;
-    k = r + half_h * k;
+    temp = r + half_h * k;
 
     //2nd
-    f(k, k, dim);
+    f(temp, k, dim);
     r_step += h * (1. / 3.) * k;
-    k = r + half_h * k;
+    temp = r + half_h * k;
 
     //3rd
-    f(k, k, dim);
+    f(temp, k, dim);
     r_step += h * (1. / 3.) * k;
-    k = r + h * k;
+    temp = r + h * k;
 
     //4th
-    f(k, k, dim);
+    f(temp, k, dim);
 
     //advance r in time
     r += r_step + h * (1. / 6.) * k;
@@ -272,6 +273,7 @@ void inline f_harmonic(valarray<double> &r, valarray<double> &k, const int dim)
     {
         k[i] = 0.0;
     }
+	
 
 
     for (int d = 0; d < dim; d++)
@@ -285,5 +287,6 @@ void inline f_harmonic(valarray<double> &r, valarray<double> &k, const int dim)
         }
 
     }
+	
 
 }
