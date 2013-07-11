@@ -42,7 +42,7 @@ Darwin EOM prototype. "k" is a valarray which contains the derivatives used in e
 */
 void inline func(valarray<double> &r, valarray<double> &k, const int dim);
 /*
-1D Harmonic oscillator EOM prototype. 
+1D Harmonic oscillator EOM prototype.
 */
 void inline f_harmonic(valarray<double> &r, valarray<double> &k, const int dim);
 
@@ -51,58 +51,58 @@ int main()
 
 {
     //I.C.s, loops, etc. Here's a sample using the 1D harmonic oscillator function, f_harmonic.
-    
-/*
-    //create output file
-    ofstream OUTPUT("output.txt");
 
-        //# of particles
-    	const int N_p = 1;
+    /*
+        //create output file
+        ofstream OUTPUT("output.txt");
 
-        //# of space dims
-    	const int dim = 1;
+            //# of particles
+        	const int N_p = 1;
 
-        //total valarray size
-    	const int N_tot = 2*N_p*dim;
+            //# of space dims
+        	const int dim = 1;
 
-        //declare valarray r, to contain the p's and x's
-    	valarray<double> r(N_tot);
+            //total valarray size
+        	const int N_tot = 2*N_p*dim;
 
-        //I.C.s
-    	r[0*dim+0] = 0.25;
-    	r[(0+1)*dim+0] = 0.5;
+            //declare valarray r, to contain the p's and x's
+        	valarray<double> r(N_tot);
 
-    	//time steps, total time, etc.
-	double sim_time = 100.0;
-	double dt = 0.001;
-    	const int N_t = int(sim_time/dt);
+            //I.C.s
+        	r[0*dim+0] = 0.25;
+        	r[(0+1)*dim+0] = 0.5;
 
-        //start time
-    	double t = 0.0;
+        	//time steps, total time, etc.
+    	    double sim_time = 100.0;
+        	double dt = 0.001;
+        	const int N_t = int(sim_time/dt);
 
-        //loop until endtime, outputing data at each time step
+            //start time
+        	double t = 0.0;
 
-    	for (int i = 0; i < N_t; i++)
+            //loop until endtime, outputing data at each time step
 
-    	{
-    		for (int d = 0; d < dim; d++)
+        	for (int i = 0; i < N_t; i++)
 
-    	{
-    		for (int i = 0; i < N_p; i++)
+        	{
+        		for (int d = 0; d < dim; d++)
 
-    		{
-    		  OUTPUT << r[i*dim+d] << " " << r[(i+1)*dim+d] << endl;
-    		}
-    	}
+        	{
+        		for (int i = 0; i < N_p; i++)
 
-    		rk4(r, dt, t, dim, f_harmonic);
+        		{
+        		  OUTPUT << r[i*dim+d] << " " << r[(i+1)*dim+d] << endl;
+        		}
+        	}
+
+        		rk4(r, dt, t, dim, f_harmonic);
 
 
-    	}
+        	}
 
-    	//close file
-    	OUTPUT.close();
-*/   
+        	//close file
+        	OUTPUT.close();
+    */
 
     return 0;
 
@@ -116,7 +116,7 @@ void inline rk4(valarray<double> &r, double h, double &t, const int dim, void (*
     //define k, r_step, and temp arrays to hold eom evaluations
     valarray<double> k(r.size());
     valarray<double> r_step(r.size());
-	valarray<double> temp(r.size());
+    valarray<double> temp(r.size());
 
     const double half_h = h / 2.;
 
@@ -157,9 +157,10 @@ void inline func(valarray<double> &r, valarray<double> &k, const int dim)
     const double fac = 1. / (2.* m * m * m * c * c);
     const double fac1 = 1. / (2.* m * m * c * c);
 
+    int k_size = k.size();
 
     //reset k vector
-    for (unsigned int i = 0; i < k.size(); i++)
+    for (int i = 0; i < k_size; i++)
     {
         k[i] = 0.0;
     }
@@ -253,6 +254,7 @@ void inline func(valarray<double> &r, valarray<double> &k, const int dim)
 
     //free n_ij
     delete [] n_ij;
+    n_ij = NULL;
 
 }
 
@@ -273,7 +275,7 @@ void inline f_harmonic(valarray<double> &r, valarray<double> &k, const int dim)
     {
         k[i] = 0.0;
     }
-	
+
 
 
     for (int d = 0; d < dim; d++)
@@ -287,6 +289,6 @@ void inline f_harmonic(valarray<double> &r, valarray<double> &k, const int dim)
         }
 
     }
-	
+
 
 }
