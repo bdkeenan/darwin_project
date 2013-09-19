@@ -63,7 +63,7 @@ int main()
         	const int dim = 1;
 
             //total valarray size
-        	const int N_tot = 4*N_p*dim;
+        	const int N_tot = 2*N_p*dim;
 
             //declare valarray r, to contain the p's and x's
         	valarray<double> r(N_tot);
@@ -169,7 +169,7 @@ void inline func(valarray<double> &r, valarray<double> &k, const int dim)
     double *n_ij = new double[dim];
 
     //get number of particles
-    const int N_p = r.size() / (4 * dim);
+    const int N_p = r.size() / (2 * dim);
 
     //arrays arrive in 1D form, where an element is identified by: i_par * dim + j_dim
 
@@ -267,7 +267,7 @@ void inline f_harmonic(valarray<double> &r, valarray<double> &k, const int dim)
     const double omega = 1.0;
 
     //get number of particles
-    const int N_p = r.size() / (4 * dim);
+    const int N_p = r.size() / (2 * dim);
 
 
     //reset k vector
