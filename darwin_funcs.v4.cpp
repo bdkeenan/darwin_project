@@ -63,7 +63,7 @@ int main()
         	const int dim = 1;
 
             //total valarray size
-        	const int N_tot = 2*N_p*dim;
+        	const int N_tot = 4*N_p*dim;
 
             //declare valarray r, to contain the p's and x's
         	valarray<double> r(N_tot);
@@ -91,7 +91,7 @@ int main()
         		for (int i = 0; i < N_p; i++)
 
         		{
-        		  OUTPUT << r[i*dim+d] << " " << r[(i+1)*dim+d] << endl;
+        		  OUTPUT << r[i*2*dim+d] << " " << r[(2*i+1)*dim+d] << endl;
         		}
         	}
 
@@ -169,7 +169,7 @@ void inline func(valarray<double> &r, valarray<double> &k, const int dim)
     double *n_ij = new double[dim];
 
     //get number of particles
-    const int N_p = r.size() / (2 * dim);
+    const int N_p = r.size() / (4 * dim);
 
     //arrays arrive in 1D form, where an element is identified by: i_par * dim + j_dim
 
@@ -183,14 +183,14 @@ void inline func(valarray<double> &r, valarray<double> &k, const int dim)
         for (int d = 0; d < dim; d++)
 
         {
-            p_sq += r[(i + 1) * dim + d] * r[(i + 1) * dim + d];
+            p_sq += r[(2 * i + 1) * dim + d] * r[(2 * i + 1) * dim + d];
         }
 
         //evaluate equations of motion: -dH/dx = dp/dt; dH/dp = dx/dt
         for (int d = 0; d < dim; d++)
         {
             //dH/dp, 1st part
-            k[i * dim + d] = r[(i + 1) * dim + d] / m - p_sq * fac * r[(i + 1) * dim + d];
+            k[i * 2 * dim + d] = r[(2 * i + 1) * dim + d] / m - p_sq * fac * r[(2 * i + 1) * dim + d];
         }
 
         //sum part of eom evaluation. Note: this probably needs a more efficient implementation
@@ -212,7 +212,7 @@ void inline func(valarray<double> &r, valarray<double> &k, const int dim)
                 for (int d = 0; d < dim; d++)
 
                 {
-                    R_ij += (r[i * dim + d] - r[j * dim + d]) * (r[i * dim + d] - r[j * dim + d]);
+                    R_ij += (r[i * 2 * dim + d] - r[j * 2 * dim + d]) * (r[i * 2 * dim + d] - r[j * 2 * dim + d]);
                 }
 
                 R_ij = sqrt(R_ij);
@@ -221,28 +221,28 @@ void inline func(valarray<double> &r, valarray<double> &k, const int dim)
                 for (int d = 0; d < dim; d++)
 
                 {
-                    n_ij[d] = (r[i * dim + d] - r[j * dim + d]) / R_ij;
+                    n_ij[d] = (r[i * 2 * dim + d] - r[j * 2 * dim + d]) / R_ij;
                 }
 
                 //calculate some dot products
                 for (int d = 0; d < dim; d++)
 
                 {
-                    pjdotn += n_ij[d] * r[(j + 1) * dim + d];
-                    pidotn += n_ij[d] * r[(i + 1) * dim + d];
-                    pidotpj += r[(i + 1) * dim + d] * r[(j + 1) * dim + d];
+                    pjdotn += n_ij[d] * r[(2 * j + 1) * dim + d];
+                    pidotn += n_ij[d] * r[(2 * i + 1) * dim + d];
+                    pidotpj += r[(2 * i + 1) * dim + d] * r[(2 * j + 1) * dim + d];
                 }
 
                 for (int d = 0; d < dim; d++)
 
                 {
                     //rest of dH/dp
-                    k[i * dim + d] -= (e * e / R_ij) * fac1 * (r[(j + 1) * dim + d] + pjdotn * n_ij[d]);
+                    k[i * 2 * dim + d] -= (e * e / R_ij) * fac1 * (r[(2 * j + 1) * dim + d] + pjdotn * n_ij[d]);
 
                     //-dH/dx
                     double A = (e * e) / (R_ij * R_ij);
-                    k[(i + 1)*dim + d] += A * n_ij[d] * (1. - fac1 * pidotpj) - 3.*fac1 * A * n_ij[d] * pidotn * pjdotn;
-                    k[(i + 1)*dim + d] += fac1 * A * (r[(i + 1) * dim + d] * pjdotn + r[(j + 1) * dim + d] * pidotn);
+                    k[(2 * i + 1)*dim + d] += A * n_ij[d] * (1. - fac1 * pidotpj) - 3.*fac1 * A * n_ij[d] * pidotn * pjdotn;
+                    k[(2 * i + 1)*dim + d] += fac1 * A * (r[(2 * i + 1) * dim + d] * pjdotn + r[(2 * j + 1) * dim + d] * pidotn);
                 }
 
             }
@@ -267,7 +267,7 @@ void inline f_harmonic(valarray<double> &r, valarray<double> &k, const int dim)
     const double omega = 1.0;
 
     //get number of particles
-    const int N_p = r.size() / (2 * dim);
+    const int N_p = r.size() / (4 * dim);
 
 
     //reset k vector
@@ -284,8 +284,8 @@ void inline f_harmonic(valarray<double> &r, valarray<double> &k, const int dim)
         for (int i = 0; i < N_p; i++)
 
         {
-            k[(i + 1)*dim + d] = (-1.) * m * omega * omega * r[i * dim + d];
-            k[i * dim + d] = r[(i + 1) * dim + d] / m;
+            k[(2 * i + 1)*dim + d] = (-1.) * m * omega * omega * r[i * 2 * dim + d];
+            k[i * 2 * dim + d] = r[(2 * i + 1) * dim + d] / m;
         }
 
     }
