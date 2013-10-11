@@ -171,7 +171,7 @@ void inline func(valarray<double> &r, valarray<double> &k, const int dim)
     //get number of particles
     const int N_p = r.size() / (2 * dim);
 
-    //arrays arrive in 1D form, where an element is identified by: i_par * dim + j_dim
+    //arrays arrive in 1D form, where an element is identified by: i_par * 2 * dim + j_dim
 
     for (int i = 0; i < N_p; i++)
 
