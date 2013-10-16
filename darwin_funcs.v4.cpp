@@ -246,9 +246,9 @@ void inline func(valarray<double> &r, valarray<double> &k, const int dim)
                 }
 
             }
+		
 
-
-        }
+         }
 
     }
 
