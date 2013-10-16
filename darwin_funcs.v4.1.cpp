@@ -22,12 +22,19 @@ Finally, I've defined these functions as "inline". This MIGHT make them faster .
 
 Anyway, I recommend that we try this out (see if it works), and then give a little more thought to
 optimization.
+ 
+ 
+UPDATE: This version includes an optional dipole term (where the magnetic moment, m is aligned along the z-axis). 
 */
 
 #include <iostream>
 #include <fstream>
 //valarrays require:
 #include <valarray>
+
+
+//Include dipole term?
+bool dip_yes = true;
 
 using namespace std;
 
@@ -36,15 +43,16 @@ rk4 function prototype, where "r" is a valarray containing the x, y, ... and px,
 Use row-major ordering. "h" is the time step size, "t" is the current time, and "dim" is the number of
 spatial dimensions. The final argument is the function which contains the eom. Note the number of arguments and their types.
 */
-void inline rk4(valarray<double> &r, double h, double &t, const int dim, void (*f)(valarray<double> &, valarray<double> &, const int));
-/*
-Darwin EOM prototype. "k" is a valarray which contains the derivatives used in each step of rk4.
-*/
-void inline func(valarray<double> &r, valarray<double> &k, const int dim);
-/*
-1D Harmonic oscillator EOM prototype.
-*/
-void inline f_harmonic(valarray<double> &r, valarray<double> &k, const int dim);
+inline void rk4(valarray<double> &r, double h, double &t, const int dim, void (*f)(valarray<double> &, valarray<double> &, const int));
+
+//Darwin EOM prototype. "k" is a valarray which contains the derivatives used in each step of rk4.
+inline void func(valarray<double> &r, valarray<double> &k, const int dim);
+
+//1D Harmonic oscillator EOM prototype.
+inline void f_harmonic(valarray<double> &r, valarray<double> &k, const int dim);
+
+//This function will include a dipole term. Note: the dipole moment is along the z-axis
+inline void dip_int(valarray<double> &r, valarray<double> &k, const double m, const double e, const double c);
 
 
 int main()
@@ -110,7 +118,7 @@ int main()
 
 
 
-void inline rk4(valarray<double> &r, double h, double &t, const int dim, void (*f)(valarray<double> &, valarray<double> &, const int))
+inline void rk4(valarray<double> &r, double h, double &t, const int dim, void (*f)(valarray<double> &, valarray<double> &, const int))
 
 {
     //define k, r_step, and temp arrays to hold eom evaluations
@@ -147,7 +155,7 @@ void inline rk4(valarray<double> &r, double h, double &t, const int dim, void (*
 }
 
 
-void inline func(valarray<double> &r, valarray<double> &k, const int dim)
+inline void func(valarray<double> &r, valarray<double> &k, const int dim)
 
 {
     //constants
@@ -246,20 +254,103 @@ void inline func(valarray<double> &r, valarray<double> &k, const int dim)
                 }
 
             }
-		
 
-         }
+
+        }
 
     }
 
     //free n_ij
     delete [] n_ij;
     n_ij = NULL;
+	
+	
+  //dipole term	
+  if (dim == 3 && dip_yes == true)
 
+  {		
+	dip_int(r, k, m, e, c);
+  }
+	  
+	  
 }
 
 
-void inline f_harmonic(valarray<double> &r, valarray<double> &k, const int dim)
+
+inline void dip_int(valarray<double> &r, valarray<double> &k, const double m, const double e, const double c)
+
+{
+	//For sanity's sake, I've chosen the magnetic moment along the z-axis.
+	
+   const double m_z = 1.0;
+   const double m_z2 = m_z*m_z;
+	
+   const double fac = 1./(m*c);
+   const double fac1 = 3.*fac;
+   const double fac2 = 2.*e*e/(c*c);
+   const double fac3 = 3.*fac2;
+	
+	
+	
+	//get number of particles
+	const int N_p = r.size() / 6;
+	
+	
+	for (int i = 0; i < N_p; i++)
+		
+	{
+		int offset_x = i * 6;
+		int offset_p = offset_x + 3;
+		
+		double x = r[offset_x];
+		double y = r[offset_x + 1];
+		double z = r[offset_x + 2];
+	
+		double px = r[offset_p];
+		double py = r[offset_p + 1];
+  
+		double r_mag = std::sqrt(x*x + y*y + z*z);
+		double r_mag2 = r_mag*r_mag;
+		double r_mag3 = r_mag*r_mag2;
+		double r_mag5 = r_mag3*r_mag2;
+		double r_mag6 = r_mag3*r_mag3;
+		double r_mag8 = r_mag6*r_mag2;
+		
+		//dH^{dip}_{int}/dp term
+		double mult_fac = fac*m_z/r_mag3;
+		
+		k[offset_x] += mult_fac*y;
+		k[offset_x + 1] -= mult_fac*x;
+		
+		//1st term in -dH^{dip}_{int}/dx
+		
+		k[offset_p] -= mult_fac*py;
+		k[offset_p + 1] -= mult_fac*px;
+		
+		//2nd term in -dH^{dip}_{int}/dx
+		mult_fac = x*y*fac1*m_z/r_mag5;
+		
+		k[offset_p] += mult_fac*px;
+		k[offset_p + 1] -= mult_fac*py;
+		
+		//3rd term in -dH^{dip}_{int}/dx
+		mult_fac = fac2*m_z2/r_mag6;
+		
+		k[offset_p] -= mult_fac*x;
+		k[offset_p + 1] -= mult_fac*y;
+		
+		//4th, and final, term in -dH^{dip}_{int}/dx
+		mult_fac = fac3*(r_mag2*m_z2 - m_z2*z*z)/r_mag8;
+		
+		k[offset_p] += mult_fac*x;
+		k[offset_p + 1] += mult_fac*y;
+		k[offset_p + 2] += mult_fac*z;
+	}
+	
+}
+
+
+inline void f_harmonic(valarray<double> &r, valarray<double> &k, const int dim)
 
 {
     //constants
