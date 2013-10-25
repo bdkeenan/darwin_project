@@ -5,7 +5,7 @@ Included is a dipole interaction term, which is purported to be a model of the e
 The I.C.s for position are randomly selected (uniform distrib.) from a region of space that has a size defined by
 number density of the particles (at a distance of 1 A.U. from the Sun) divided by the total sim. particles.
 
-The initial velocities are selected from a drifting Maxwellian distribution
+The initial velocities are selected from a drifting (in x-direction) Maxwellian distribution
 (using the average solar wind velocity and temperature).
 
 All particles begin motion along the x-axis at a min. distance of L*R_e from "earth" (R_e is the radius of the earth).
@@ -612,15 +612,17 @@ inline void ic(MTRand &mtrand, MTRand &mtrand1, double rmin, double rmax, std::v
 	    {
 
 		 v[i*dim] = mtrand1.randNorm(v_avg, std::sqrt(E_avg/m[i]));
+		 v[i*dim+1] = mtrand1.randNorm(0.0, std::sqrt(E_avg/m[i]));
+		 v[i*dim+2] = mtrand1.randNorm(0.0, std::sqrt(E_avg/m[i]));
 
-		} while (v[i*dim] > 0.1*c);
 
-		v[i*dim+1] = 0.0;
-		v[i*dim+2] = 0.0;
+		} while (v[i*dim] > 0.1*c || v[i*dim+1] > 0.1*c || v[i*dim+2] > 0.1*c);
 
-		r[offset_p] = (-1.0)*m[i]*v[i*dim]*(1.0+v[i*dim]*v[i*dim]/(2.0*c*c));
-		r[offset_p+1] = 0.0;
-		r[offset_p+2] = 0.0;
+
+        for (int d = 0; d < dim; d++)
+        {
+          r[offset_p] = (-1.0)*m[i]*v[i*dim+d]*(1.0+v[i*dim+d]*v[i*dim+d]/(2.0*c*c));
+        }
 
 
 		if (dip_yes == true)
